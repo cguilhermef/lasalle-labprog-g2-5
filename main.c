@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define DB "database.db"
+
 typedef struct{
 	int matricula;
 	char nome[255];
@@ -9,9 +11,25 @@ typedef struct{
 	int ativo;
 } Aluno;
 
+FILE * openDB() {
+	FILE * db = fopen(DB, "r+");
+	
+	if (!db) {
+		db = fopen(DB, "w+");
+	}
+	
+	return db;
+}
+
+void closeDB(FILE * db) {
+  fclose(db);
+  return;
+}
+
 cadastrarAluno(int *id, Aluno *alunos){
   int i = 0;
   Aluno tmpAluno;
+  FILE * db;
   
 	system("cls");
 	printf("_______________________________________________________________________________\n");
@@ -53,6 +71,10 @@ cadastrarAluno(int *id, Aluno *alunos){
 	  i++;
 	}
 	(*id)++;
+	
+	db = openDB();
+	fprintf(db, "%d#%s#%f#%")
+	closeDB(db);
 
 	printf("\nSalvo!\n[ENTER]");
 	getch();
