@@ -80,7 +80,12 @@ Aluno line2struct(char param[]) {
   return tmp;
 }
 
-cadastrarAluno(int *id, Aluno *alunos){
+int getMatriculaByBuffer(char buffer[]) {
+  char * token = strtok(buffer, ",");
+  return atoi(token);
+};
+
+cadastrarAluno(){
   int i = 0;
   Aluno tmpAluno;
   FILE * db;
@@ -98,7 +103,7 @@ cadastrarAluno(int *id, Aluno *alunos){
 	  i++;
 	}	
 	printf("_______________________________________________________________________________\n");
-	printf("| ID: %d                                                                      |\n", *id);
+	printf("| ID: %d                                                                      |\n", counter);
 	printf("| Nome do aluno: %s\n", tmpAluno.nome);
 	i = 0;
 	while(i < 4) {
@@ -115,16 +120,7 @@ cadastrarAluno(int *id, Aluno *alunos){
 	if (i != 1) {
 	  return;
 	}	
-	
-	i = 0;
-	while(i < 4) {
-	  (alunos+(*id))->notas[i] = tmpAluno.notas[i];
-	  i++;
-	}
-	(*id)++;
-	
-	
-	
+
 	db = openDBMode("a");
 	fprintf(db, "%d,%s,%f,%f,%f,%f,%d;\n", 
 	  counter,
@@ -143,7 +139,7 @@ cadastrarAluno(int *id, Aluno *alunos){
 	return;
 };
 
-void exibirAlunos(int lastId, Aluno alunos[]) {
+void exibirAlunos() {
   int i = 0;
   int c = 0;
   Aluno tmp;
@@ -168,12 +164,15 @@ void exibirAlunos(int lastId, Aluno alunos[]) {
   return;
 }
 
-void mediaDoAluno(int lastId, Aluno alunos[]) {
+void mediaDoAluno() {
   Aluno aluno;
   int i = 0;
   int has = 0;
   float media = 0;
+  char buffer[1000];
   int id;
+  int lastId = countRegisters();
+  FILE * db = openDBMode("r");
   system("cls");
 	printf("_______________________________________________________________________________\n");
 	printf("| MEDIA DO ALUNO                                                             |\n");
@@ -181,18 +180,19 @@ void mediaDoAluno(int lastId, Aluno alunos[]) {
 	scanf("%d", &id);
 	fflush(stdin);
 	
-  while (i < lastId) {
-    if ( alunos[i].matricula == id && alunos[i].ativo == 1) {
-      has = 1;
-    }
-    i++;
-  }
+	while(fgets(buffer, 1000, db) && has == 0) {
+	  aluno = line2struct(buffer);
+	  if (aluno.matricula == id && aluno.ativo == 1) {
+	    has = 1;
+	  }
+	}
+	
   if (has == 1) {
-    printf("| Aluno: %s\n", alunos[id].nome);
+    printf("| Aluno: %s\n", aluno.nome);
     i = 0;
     while(i < 4) {
-      media += alunos[id].notas[i];
-      printf("| Nota %d:    %.2f\n", i+1, alunos[id].notas[i] );
+      media += aluno.notas[i];
+      printf("| Nota %d:    %.2f\n", i+1, aluno.notas[i] );
       i++;
     }
     printf("| --------------------\n");
@@ -200,16 +200,20 @@ void mediaDoAluno(int lastId, Aluno alunos[]) {
   } else {
     printf("Aluno nao encontrado!\n[ENTER]");
   }
-  
+  closeDB(db);
   getch();
   return;
 }
 
-void mediaDaTurma(int lastId, Aluno alunos[]) {
+void mediaDaTurma() {
   int i = 0;
   int j = 0;
   int c = 0;
+  int lastId = countRegisters();
+  FILE * db = openDBMode("r");
+  char buffer[1000];
   float medias[5];
+  Aluno aluno;
   while(i < 5) {
     medias[i] = 0;
     i++;
@@ -219,17 +223,17 @@ void mediaDaTurma(int lastId, Aluno alunos[]) {
 	printf("| MEDIAS DA TURMA                                                            |\n");
 	printf("| Medias por nota                                                            |\n");
 	i = 0;
-	while(i < lastId) {
-	  if (alunos[i].ativo == 1) {
-  	  while(j < 4) {
-  	    medias[j] += (alunos+i)->notas[j]; //media da nota
-  	    medias[4] += (alunos+i)->notas[j]; //media total
-  	    j++;
-  	  }
-  	  c++;
-  	}
-	  j = 0;
-	  i++;
+	while (fgets(buffer, 1000, db)) {
+	  aluno = line2struct(buffer);
+	  if (aluno.ativo == 1) {
+  	  while(i < 4) {
+  	    medias[i] += aluno.notas[i];
+  	    medias[4] += aluno.notas[i]; //media total
+  	    i++;
+      }
+    	c++;
+    	i = 0;
+    }
 	}
 	
 	if (lastId > 0) {
@@ -243,6 +247,7 @@ void mediaDaTurma(int lastId, Aluno alunos[]) {
   } else {
     printf("| Nenhum aluno cadastrado!\n[ENTER]");
   }
+  closeDB(db);
   
   getch();
   return;
@@ -402,13 +407,13 @@ int main(int argc, char *argv[]) {
   			cadastrarAluno(&lastId, alunos);
   			break;
   		case 2:
-  			exibirAlunos(lastId, alunos);
+  			exibirAlunos();
   			break;
   	  case 3:
-  			mediaDoAluno(lastId, alunos);
+  			mediaDoAluno();
   			break;
   		case 4:
-  			mediaDaTurma(lastId, alunos);
+  			mediaDaTurma();
   			break;
   		case 5:
   			excluirAluno(lastId, alunos);
