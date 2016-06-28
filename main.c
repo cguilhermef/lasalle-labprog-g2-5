@@ -21,16 +21,70 @@ FILE * openDB() {
 	return db;
 }
 
+FILE * openDBMode(char mode[2]) {
+	FILE * db = fopen(DB, mode);
+	
+	if (!db) {
+	  printf("\n Falha ao abrir o arquivo!\n");
+	  getch();
+  	fflush(stdin);
+  	return;
+	}
+	
+	return db;
+}
+
 void closeDB(FILE * db) {
   fclose(db);
   return;
+}
+
+int countRegisters() {
+  FILE * db = openDBMode("r");
+  int count = 0;
+  
+  if (db) {
+    while(!feof(db) && count < 1000) {
+      if (getc(db) == ';') {
+        count++;
+      }
+    }
+  }
+  closeDB(db);
+  return count;
+}
+Aluno line2struct(char param[]) {
+  Aluno tmp;
+  char buffer[1000];
+  int c = 0;
+  while(param[c] != ';') {
+    buffer[c] = param[c];
+    c++;
+  }
+  buffer[c] = '\0';
+  char * aux = strtok(buffer, ",");
+  tmp.matricula = atoi(aux);
+  aux = strtok(NULL, ",");
+  strcpy(tmp.nome, aux);
+  aux = strtok(NULL, ",");
+  tmp.notas[0] = atof(aux);
+  aux = strtok(NULL, ",");
+  tmp.notas[1] = atof(aux);
+  aux = strtok(NULL, ",");
+  tmp.notas[2] = atof(aux);
+  aux = strtok(NULL, ",");
+  tmp.notas[3] = atof(aux);
+  aux = strtok(NULL, ",");
+  tmp.ativo = atoi(aux);
+  
+  return tmp;
 }
 
 cadastrarAluno(int *id, Aluno *alunos){
   int i = 0;
   Aluno tmpAluno;
   FILE * db;
-  
+  int counter = countRegisters();
 	system("cls");
 	printf("_______________________________________________________________________________\n");
 	printf("| CADASTRAR ALUNO                                                             |\n");
@@ -44,7 +98,7 @@ cadastrarAluno(int *id, Aluno *alunos){
 	  i++;
 	}	
 	printf("_______________________________________________________________________________\n");
-	printf("| ID: %d                                                                      |\n", ((*id)+1));
+	printf("| ID: %d                                                                      |\n", *id);
 	printf("| Nome do aluno: %s\n", tmpAluno.nome);
 	i = 0;
 	while(i < 4) {
@@ -62,9 +116,6 @@ cadastrarAluno(int *id, Aluno *alunos){
 	  return;
 	}	
 	
-	(alunos+(*id))->matricula = (*id);
-	(alunos+(*id))->ativo = 1;
-	strcpy((alunos+(*id))->nome, tmpAluno.nome);
 	i = 0;
 	while(i < 4) {
 	  (alunos+(*id))->notas[i] = tmpAluno.notas[i];
@@ -72,8 +123,18 @@ cadastrarAluno(int *id, Aluno *alunos){
 	}
 	(*id)++;
 	
-	db = openDB();
-	fprintf(db, "%d#%s#%f#%")
+	
+	
+	db = openDBMode("a");
+	fprintf(db, "%d,%s,%f,%f,%f,%f,%d;\n", 
+	  counter,
+    tmpAluno.nome, 
+    tmpAluno.notas[0], 
+    tmpAluno.notas[1],
+    tmpAluno.notas[2],
+    tmpAluno.notas[3],
+    1);
+  
 	closeDB(db);
 
 	printf("\nSalvo!\n[ENTER]");
@@ -85,19 +146,23 @@ cadastrarAluno(int *id, Aluno *alunos){
 void exibirAlunos(int lastId, Aluno alunos[]) {
   int i = 0;
   int c = 0;
+  Aluno tmp;
   system("cls");
 	printf("_______________________________________________________________________________\n");
 	printf("| ALUNOS CADASTRADOS                                                          |\n");
-	while(i < lastId) {
-    if (alunos[i].ativo == 1) {
-      printf("| %d - %s\n", alunos[i].matricula, alunos[i].nome);
-      c++;
-  	}  
-    i++;
-  }
+	FILE * db = openDBMode("r");
+	char buffer[1000];
+	while(fgets(buffer, 1000, db)) {
+	  tmp = line2struct(buffer);
+	  if (tmp.ativo == 1) {
+	    printf("| %d - %s\n", tmp.matricula, tmp.nome);
+	    c++;
+	  }
+	}
 	if (c ==0) {
 	  printf("| Nenhum aluno cadastrado!                                                    |\n");
 	}
+	close(db);
   printf("\n[ENTER]");
   getch();
   return;
@@ -310,7 +375,7 @@ void procurarAlunos(int lastId, Aluno alunos[]) {
 int main(int argc, char *argv[]) {
 
 	Aluno alunos[10];
-  int lastId = 0;	
+  int lastId = countRegisters();
 	int opt = 999;
   
   if (argc > 1) {
