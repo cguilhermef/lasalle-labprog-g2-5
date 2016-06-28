@@ -74,8 +74,6 @@ Aluno line2struct(char param[]) {
   tmp.notas[2] = atof(aux);
   aux = strtok(NULL, ",");
   tmp.notas[3] = atof(aux);
-  aux = strtok(NULL, ",");
-  tmp.ativo = atoi(aux);
   
   return tmp;
 }
@@ -122,14 +120,13 @@ cadastrarAluno(){
 	}	
 
 	db = openDBMode("a");
-	fprintf(db, "%d,%s,%f,%f,%f,%f,%d;\n", 
+	fprintf(db, "%d,%s,%f,%f,%f,%f\n", 
 	  counter,
     tmpAluno.nome, 
     tmpAluno.notas[0], 
     tmpAluno.notas[1],
     tmpAluno.notas[2],
-    tmpAluno.notas[3],
-    1);
+    tmpAluno.notas[3]);
   
 	closeDB(db);
 
@@ -150,10 +147,8 @@ void exibirAlunos() {
 	char buffer[1000];
 	while(fgets(buffer, 1000, db)) {
 	  tmp = line2struct(buffer);
-	  if (tmp.ativo == 1) {
-	    printf("| %d - %s\n", tmp.matricula, tmp.nome);
-	    c++;
-	  }
+    printf("| %d - %s\n", tmp.matricula, tmp.nome);
+    c++;
 	}
 	if (c ==0) {
 	  printf("| Nenhum aluno cadastrado!                                                    |\n");
@@ -182,7 +177,7 @@ void mediaDoAluno() {
 	
 	while(fgets(buffer, 1000, db) && has == 0) {
 	  aluno = line2struct(buffer);
-	  if (aluno.matricula == id && aluno.ativo == 1) {
+	  if (aluno.matricula == id) {
 	    has = 1;
 	  }
 	}
@@ -225,15 +220,13 @@ void mediaDaTurma() {
 	i = 0;
 	while (fgets(buffer, 1000, db)) {
 	  aluno = line2struct(buffer);
-	  if (aluno.ativo == 1) {
-  	  while(i < 4) {
-  	    medias[i] += aluno.notas[i];
-  	    medias[4] += aluno.notas[i]; //media total
-  	    i++;
-      }
-    	c++;
-    	i = 0;
+	  while(i < 4) {
+	    medias[i] += aluno.notas[i];
+	    medias[4] += aluno.notas[i]; //media total
+	    i++;
     }
+  	c++;
+  	i = 0;
 	}
 	
 	if (lastId > 0) {
@@ -254,86 +247,78 @@ void mediaDaTurma() {
   
 }
 
-void excluirAluno(int lastId, Aluno *alunos) {
+void excluirAluno() {
   int i = 0;
   int id = 0;
   int found = 0;
+  Aluno aluno;
   system("cls");
 	printf("_______________________________________________________________________________\n");
 	printf("| EXCLUIR ALUNO                                                               |\n");
 	printf("| Matricula: ");
 	scanf("%d", &id);
 	fflush(stdin);
-	
-	while(i < lastId) {
-	  if (alunos[i].ativo == 1 && alunos[i].matricula == id) {
-	    found = 1;
-	  }
-	  i++;
+	char buffer[1000];
+	char bufferAux[1000];
+  	
+  // inicia um arquivo temporário novo
+	FILE * tmpDB = fopen("database.tmp", "w");
+	if (tmpDB == NULL) {
+	  printf("\n Falha ao criar o arquivo temporário!\n");
+	  return;
 	}
-	
+	closeDB(tmpDB);
+	// abre o arquivo temporário em modo "append"
+	tmpDB = fopen("database.tmp", "a");
+	if (tmpDB == NULL) {
+	  printf("\n Falha ao abrir o arquivo temporário!\n");
+	  return;
+	}
+	FILE * db = openDBMode("r+");	
+
+	while(fgets(buffer, 1000, db)) {
+	  strcpy(bufferAux, buffer);
+	  if (getMatriculaByBuffer(buffer) != id) {
+	    fputs(bufferAux, tmpDB);
+	  } else {
+	    strcpy(buffer, bufferAux);
+	    aluno = line2struct(buffer);
+	    i = 0;
+    	while(i != 1 && i != 2){
+    	  printf("| Aluno: %s\n", aluno.nome);
+    	  printf("| 1) Excluir  2) Nao excluir:\n");
+    	  printf("| > ");
+    	  scanf("%d", &i);
+    	  fflush(stdin);
+    	}
+    	if (i != 1) {
+    	  fputs(bufferAux, tmpDB);
+    	  return;
+    	}
+    	found = 1;
+	  }
+	}
 	if (found == 1) {
-	  i = 0;
-  	while(i != 1 && i != 2){
-  	  printf("| Aluno: %s\n", alunos[id].nome);
-  	  printf("| 1) Excluir  2) Nao excluir:\n");
-  	  printf("| > ");
-  	  scanf("%d", &i);
-  	  fflush(stdin);
-  	}
-  	if (i != 1) {
-  	  return;
-  	}
-  	alunos[id].ativo = 0;
-  	printf("\nExcluido!\n\n[ENTER]");
+	  closeDB(tmpDB);
+	  closeDB(db);
+	  tmpDB = fopen("database.tmp", "r");
+	  db = openDBMode("w");
+	  while(fgets(buffer, 1000, tmpDB)) {
+	    fputs(buffer, db);
+	  }
+	}
+	closeDB(db);
+	closeDB(tmpDB);
+	remove("database.tmp");
+	if (found == 1) {
+	  printf("\nExcluido!\n\n[ENTER]");
   	getch();
   	fflush(stdin);
   	return;
-	} else {
-    printf("| Aluno nao encontrado!                                                       |\n");
 	}
-}
-
-void cadastroPorParametro(char *argv[], int *lastId, Aluno *alunos) {
-  int i = 0;
-	int j = 0;
-	int c = 0;
-	char *aluno;
-	char *alunosTemp[10];
-	char *campos;
-	aluno = strtok(argv[1], "@");
-//	
-	while (aluno) {
-	  alunosTemp[*lastId] = malloc(sizeof(aluno));
-	  alunosTemp[*lastId] = aluno;
-	  (*lastId)++;
-	  aluno = strtok(NULL, "@");
-	}
-	while (i < *lastId) {
-	  c = 0;
-	  j = 0;
-	  campos = NULL;
-	  campos = strtok(alunosTemp[i], "#");	  
-	  while(campos != NULL) {
-	    printf("\n%s", campos);
-	    switch (c) {
-	      case 0:
-	        alunos[i].matricula = i;
-	        alunos[i].ativo = 1;
-	        break;
-	      case 1:
-	        //strncpy(alunos[i].nome, campos, sizeof(campos));
-	        strcpy(alunos[i].nome, campos);
-	        break;
-	      default:
-	        alunos[i].notas[j] = atof(campos);
-	        j++;
-	    }
-	    c++;
-	    campos = strtok(NULL, "#");
-	  }
-	  i++;
-	}
+	printf("\nNao encontrado!\n\n[ENTER]");
+	getch();
+	fflush(stdin);
 	return;
 }
 
@@ -377,15 +362,11 @@ void procurarAlunos(int lastId, Aluno alunos[]) {
   return;
 }
 
-int main(int argc, char *argv[]) {
+int main() {
 
 	Aluno alunos[10];
   int lastId = countRegisters();
 	int opt = 999;
-  
-  if (argc > 1) {
-    cadastroPorParametro(argv, &lastId, alunos);
-  }
 	
 	while (opt != 0) {
 		system("cls");
@@ -416,7 +397,7 @@ int main(int argc, char *argv[]) {
   			mediaDaTurma();
   			break;
   		case 5:
-  			excluirAluno(lastId, alunos);
+  			excluirAluno();
   			break;
   		case 6:
   			procurarAlunos(lastId, alunos);
