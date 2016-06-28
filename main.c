@@ -322,9 +322,12 @@ void excluirAluno() {
 	return;
 }
 
-void procurarAlunos(int lastId, Aluno alunos[]) {
+void procurarAlunos() {
   char parametro[255];
   char nomeTemp[255];
+  Aluno aluno;
+  FILE * db = openDBMode("r");
+  char buffer[1000];
   int i = 0;
   int j = 0;
   int c = 0;
@@ -339,24 +342,24 @@ void procurarAlunos(int lastId, Aluno alunos[]) {
 	  j++;
 	}
 	printf("|\n");
-	while(i < lastId) {
-	  if (alunos[i].ativo == 1) {
-  	  strcpy(nomeTemp, alunos[i].nome);
-  	  j = 0;
-  	  while(nomeTemp[j] != '\0') {
-  	    nomeTemp[j] = toupper(nomeTemp[j]);
-  	    j++;
-  	  }
-  	  if (strstr(nomeTemp, parametro)) {
-  	    printf("| %d - %s\n", alunos[i].matricula, alunos[i].nome);
-  	    c++;
-  	  }
-  	}
+	while(fgets(buffer, 1000, db)) {
+	  aluno = line2struct(buffer);
+	  strcpy(nomeTemp, aluno.nome);
+	  j = 0;
+	  while(nomeTemp[j] != '\0') {
+	    nomeTemp[j] = toupper(nomeTemp[j]);
+	    j++;
+	  }
+	  if (strstr(nomeTemp, parametro)) {
+	    printf("| %d - %s\n", aluno.matricula, aluno.nome);
+	    c++;
+	  }
   	i++;
 	}
 	if (c == 0) {
 	  printf("| Nenhum aluno encontrado!                                                    |\n");
 	}
+	closeDB(db);
 	printf("\n\n[ENTER]");
 	getch();
   return;
@@ -400,7 +403,7 @@ int main() {
   			excluirAluno();
   			break;
   		case 6:
-  			procurarAlunos(lastId, alunos);
+  			procurarAlunos();
   			break;
   	}
 	}
