@@ -120,7 +120,7 @@ cadastrarAluno(){
 	}	
 
 	db = openDBMode("a");
-	fprintf(db, "%d,%s,%f,%f,%f,%f\n", 
+	fprintf(db, "%d,%s,%f,%f,%f,%f;\n", 
 	  counter,
     tmpAluno.nome, 
     tmpAluno.notas[0], 
@@ -367,7 +367,6 @@ void procurarAlunos() {
 
 int main() {
 
-	Aluno alunos[10];
   int lastId = countRegisters();
 	int opt = 999;
 	
@@ -388,7 +387,7 @@ int main() {
     
 		switch(opt){
   		case 1:
-  			cadastrarAluno(&lastId, alunos);
+  			cadastrarAluno();
   			break;
   		case 2:
   			exibirAlunos();
