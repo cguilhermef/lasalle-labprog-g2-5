@@ -40,7 +40,7 @@ void closeDB(FILE * db) {
 }
 
 int countRegisters() {
-  FILE * db = openDBMode("r");
+  FILE * db = fopen(DB, "r");
   int count = 0;
   
   if (db) {
