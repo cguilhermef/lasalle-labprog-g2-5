@@ -153,6 +153,9 @@ void exibirAlunos() {
 	printf("_______________________________________________________________________________\n");
 	printf("| ALUNOS CADASTRADOS                                                          |\n");
 	FILE * db = openDBMode("r");
+	if (db == NULL) {
+	  return;
+  }
 	char buffer[1000];
 	while(fgets(buffer, 1000, db)) {
 	  tmp = line2struct(buffer);
@@ -375,7 +378,11 @@ void procurarAlunos() {
 }
 
 int main() {
-
+  
+  // selftest
+  FILE * db = openDB();
+  closeDB(db);
+  //
   int lastId = countRegisters();
 	int opt = 999;
 	
