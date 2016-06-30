@@ -1,3 +1,12 @@
+
+/*
+
+  Trabalho 5 do G2 - Laboratório de Programação
+  Christian Guilherme Fritsch
+  Fábio Bica
+
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
